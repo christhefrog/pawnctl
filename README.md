@@ -1,2 +1,2 @@
-# pawnman
- A pawn installation and configuration manager
+# sampman
+ A samp server manager
