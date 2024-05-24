@@ -27,7 +27,7 @@ func Fetch(url string) ([]byte, error) {
 	if res.Body != nil {
 		defer res.Body.Close()
 	} else {
-		return nil, errors.New("API responded with []")
+		return nil, errors.New("empty response")
 	}
 
 	body, err := io.ReadAll(res.Body)

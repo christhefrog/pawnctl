@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"christhefrog/sampman/components/github"
+	"christhefrog/sampman/components/compiler"
 	"christhefrog/sampman/components/sampman"
 	"christhefrog/sampman/components/util"
 
@@ -14,23 +14,29 @@ import (
 func main() {
 	config, err := sampman.LoadConfig("sampman.json")
 	if err != nil {
-		util.Fatal(fmt.Sprintf("Couldn't load sampman.json (%s)", err))
+		util.Fatalf("Couldn't load sampman.json (%s)", err)
 	}
 
-	release, err := github.FetchLatestRelease("pawn-lang", "compiler")
-
+	release, err := compiler.FetchLatestCompiler()
 	if err != nil {
-		fmt.Printf("Couldn't fetch the lastest release (%s)", err)
-	} else if !util.Has(config.Compilers, release.Name) {
-		fmt.Printf("\nLatest version: %s (%s)\n \n",
+		fmt.Printf("Couldn't fetch latest compiler (%s)", err)
+	}
+
+	if !config.GetCompiler(release.Name).IsInstalled() {
+		fmt.Printf("\nA new compiler version is available: %s (%s)\nDownloading...\n\n",
 			release.Name, release.Published.Format("02.01.2006"))
+
+		err := compiler.Download(release, &config)
+		if err != nil {
+			fmt.Printf("Couldn't download compiler version %s (%s)", release.Name, err)
+		}
 	}
 
 	app := &cli.App{
 		Name:  "sampman",
 		Usage: "A samp server manager",
 		Action: func(*cli.Context) error {
-			fmt.Println("Hello world!")
+			fmt.Println("Everything up-to-date!")
 			return nil
 		},
 	}

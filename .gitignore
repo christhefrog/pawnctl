@@ -20,4 +20,8 @@
 # Go workspace file
 go.work
 
+# sampman config files
 *.json
+
+# sampman paths
+compilers/

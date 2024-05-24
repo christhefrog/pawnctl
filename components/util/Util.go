@@ -10,11 +10,7 @@ func Fatal(message ...any) {
 	os.Exit(1)
 }
 
-func Has(haystack []string, needle string) bool {
-	for _, v := range haystack {
-		if v == needle {
-			return true
-		}
-	}
-	return false
+func Fatalf(format string, args ...any) {
+	fmt.Printf(fmt.Sprint(format, "\n"), args...)
+	os.Exit(1)
 }
