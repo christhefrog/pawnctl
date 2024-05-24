@@ -1,2 +1,4 @@
-# sampman
- A samp server manager
+#
+![sampman](logo.png)
+#
+A samp server manager
