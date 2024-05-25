@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func FetchLatestCompiler() (github.Release, error) {
+func FetchLatestRelease() (github.Release, error) {
 	release, err := github.FetchLatestRelease("pawn-lang", "compiler")
 
 	if err != nil {
@@ -33,13 +33,10 @@ func Download(release github.Release, config *sampman.Config) error {
 
 	util.Unzip(path, fmt.Sprint("compilers/", release.Name))
 
-	info := sampman.CompilerInfo{
-		Name: release.Name,
-		Path: fmt.Sprint(filepath.Dir(path), "\\", name),
-		Exec: fmt.Sprint(filepath.Dir(path), "\\", name, "\\bin\\pawncc.exe"),
-	}
+	exec := fmt.Sprint(filepath.Dir(path), "\\", name, "\\bin\\pawncc.exe")
+	config.SetCompiler(release.Name, exec)
+	config.SetCompiler("latest", exec)
 
-	config.AddCompiler(info)
 	config.Save("sampman.json")
 
 	return nil

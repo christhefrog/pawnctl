@@ -8,13 +8,7 @@ import (
 )
 
 type Config struct {
-	Compilers []CompilerInfo `json:"compilers"`
-}
-
-type CompilerInfo struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
-	Exec string `json:"exec"`
+	Compilers map[string]string `json:"compilers"`
 }
 
 func LoadConfig(path string) (Config, error) {
@@ -25,6 +19,7 @@ func LoadConfig(path string) (Config, error) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Println("Config not found. Creating in", path)
+
 		config.Save("sampman.json")
 	} else {
 		err = json.Unmarshal(file, &config)
@@ -33,24 +28,15 @@ func LoadConfig(path string) (Config, error) {
 		}
 	}
 
+	if config.Compilers == nil {
+		config.Compilers = make(map[string]string)
+	}
+
 	return config, nil
 }
 
-func (c CompilerInfo) IsInstalled() bool {
-	return (CompilerInfo{}) != c
-}
-
-func (c Config) GetCompiler(name string) CompilerInfo {
-	for _, v := range c.Compilers {
-		if v.Name == name {
-			return v
-		}
-	}
-	return CompilerInfo{}
-}
-
-func (c *Config) AddCompiler(info CompilerInfo) error {
-	c.Compilers = append(c.Compilers, info)
+func (c *Config) SetCompiler(name string, exec string) error {
+	c.Compilers[name] = exec
 	return nil
 }
 
