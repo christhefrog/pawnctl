@@ -4,11 +4,12 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 )
 
 func Fetch(url string) ([]byte, error) {
 	client := http.Client{
-		Timeout: 0,
+		Timeout: time.Second * 10,
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)

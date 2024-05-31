@@ -25,7 +25,6 @@ go.work
 
 # sampman paths
 compilers/
-servers/
 
 # pawn source and binary files
 *.pwn

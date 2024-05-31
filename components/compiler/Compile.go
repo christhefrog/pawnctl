@@ -11,13 +11,13 @@ import (
 )
 
 func Compile(source string, args ...string) error {
-	err := sampman.LoadConfig()
+	config, err := sampman.LoadConfig("sampman.json")
 
 	if err != nil {
 		return err
 	}
 
-	_, compiler := sampman.GetLatestCompiler()
+	_, compiler := config.GetLatestCompiler()
 
 	if compiler == "" {
 		return errors.New("couldn't find the latest compiler, use `sampman u`")

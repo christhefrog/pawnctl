@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"christhefrog/sampman/components/compiler"
-	"christhefrog/sampman/components/openmp"
 	"christhefrog/sampman/components/sampman"
 	"christhefrog/sampman/components/util"
 
@@ -13,7 +12,7 @@ import (
 )
 
 func Update(ctx *cli.Context) error {
-	err := sampman.LoadConfig()
+	config, err := sampman.LoadConfig("sampman.json")
 	if err != nil {
 		util.Fatalf("Couldn't load sampman.json (%s)", err)
 	}
@@ -25,30 +24,13 @@ func Update(ctx *cli.Context) error {
 		util.Fatalf("Couldn't fetch latest compiler (%s)\n", err)
 	}
 
-	if !sampman.IsCompilerInstalled(release.Name) {
+	if config.Compilers[release.Name] == "" {
 		fmt.Printf("\nA new compiler version is available: %s (%s)\nDownloading...\n\n",
 			release.Name, release.Published.Format("02.01.2006"))
 
-		err := compiler.Download(release)
+		err := compiler.Download(release, &config)
 		if err != nil {
 			util.Fatalf("Couldn't download compiler version %s (%s)", release.Name, err)
-		}
-	}
-
-	fmt.Printf("Looking for server updates...\n")
-
-	release, err = openmp.FetchLatestServer()
-	if err != nil {
-		util.Fatalf("Couldn't fetch latest server (%s)\n", err)
-	}
-
-	if !sampman.IsServerInstalled(release.Name) {
-		fmt.Printf("\nA new server version is available: %s (%s)\nDownloading...\n\n",
-			release.Name, release.Published.Format("02.01.2006"))
-
-		err = openmp.Download(release)
-		if err != nil {
-			util.Fatalf("Couldn't download server version %s (%s)", release.Name, err)
 		}
 	}
 
