@@ -2,17 +2,34 @@ package sampman
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
 type Config struct {
+	Ready bool `json:"-"`
+
 	Compilers map[string]string `json:"compilers"`
+	Servers   map[string]Server `json:"servers"`
 }
 
-func LoadConfig(path string) (Config, error) {
-	var config Config
+type Server struct {
+	Type     string `json:"type"` // samp or omp
+	Path     string `json:"path"`
+	Exec     string `json:"exec"`
+	Includes string `json:"includes"`
+}
+
+var config Config
+
+func LoadConfig() error {
+	if config.Ready {
+		return nil
+	}
+
+	path := "sampman.json"
 
 	path = fmt.Sprint(filepath.Dir(os.Args[0]), "\\", path)
 
@@ -20,35 +37,58 @@ func LoadConfig(path string) (Config, error) {
 	if err != nil {
 		fmt.Println("Config not found. Creating in", path)
 
-		config.Save("sampman.json")
+		Save()
 	} else {
 		err = json.Unmarshal(file, &config)
 		if err != nil {
-			return Config{}, err
+			return err
 		}
 	}
 
 	if config.Compilers == nil {
 		config.Compilers = make(map[string]string)
 	}
+	if config.Servers == nil {
+		config.Servers = make(map[string]Server)
+	}
 
-	return config, nil
-}
+	config.Ready = true
 
-func (c *Config) SetCompiler(name string, exec string) error {
-	c.Compilers[name] = exec
 	return nil
 }
 
-func (c *Config) GetLatestCompiler() (string, string) {
-	latest := c.Compilers["latest"]
-	return latest, c.Compilers[latest]
+func IsCompilerInstalled(name string) bool {
+	return config.Compilers[name] != ""
 }
 
-func (c Config) Save(path string) error {
+func AddCompiler(name string, exec string) error {
+	config.Compilers[name] = exec
+	return nil
+}
+
+func GetLatestCompiler() (string, string) {
+	latest := config.Compilers["latest"]
+	return latest, config.Compilers[latest]
+}
+
+func AddServer(name string, server Server) error {
+	config.Servers[name] = server
+	return nil
+}
+
+func IsServerInstalled(name string) bool {
+	return config.Servers[name].Type != ""
+}
+
+func Save() error {
+	if !config.Ready {
+		return errors.New("config handle isn't opened")
+	}
+
+	path := "sampman.json"
 	path = fmt.Sprint(filepath.Dir(os.Args[0]), "\\", path)
 
-	bytes, _ := json.MarshalIndent(c, "", "\t")
+	bytes, _ := json.MarshalIndent(config, "", "\t")
 
 	os.WriteFile(path, bytes, 0664)
 

@@ -18,7 +18,7 @@ func FetchLatestRelease() (github.Release, error) {
 	return release, nil
 }
 
-func Download(release github.Release, config *sampman.Config) error {
+func Download(release github.Release) error {
 	name := fmt.Sprint("pawnc-", release.Name, "-windows")
 
 	asset, err := release.FindAsset(fmt.Sprint(name, ".zip"))
@@ -34,10 +34,10 @@ func Download(release github.Release, config *sampman.Config) error {
 	util.Unzip(path, fmt.Sprint("compilers\\", release.Name))
 
 	exec := fmt.Sprint(filepath.Dir(path), "\\", name, "\\bin\\pawncc.exe")
-	config.SetCompiler(release.Name, exec)
-	config.SetCompiler("latest", release.Name)
+	sampman.AddCompiler(release.Name, exec)
+	sampman.AddCompiler("latest", release.Name)
 
-	config.Save("sampman.json")
+	sampman.Save()
 
 	return nil
 }
