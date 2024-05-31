@@ -31,11 +31,11 @@ func Download(release github.Release, config *sampman.Config) error {
 		return err
 	}
 
-	util.Unzip(path, fmt.Sprint("compilers/", release.Name))
+	util.Unzip(path, fmt.Sprint("compilers\\", release.Name))
 
 	exec := fmt.Sprint(filepath.Dir(path), "\\", name, "\\bin\\pawncc.exe")
 	config.SetCompiler(release.Name, exec)
-	config.SetCompiler("latest", exec)
+	config.SetCompiler("latest", release.Name)
 
 	config.Save("sampman.json")
 

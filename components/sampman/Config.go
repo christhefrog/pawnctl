@@ -40,6 +40,11 @@ func (c *Config) SetCompiler(name string, exec string) error {
 	return nil
 }
 
+func (c *Config) GetLatestCompiler() (string, string) {
+	latest := c.Compilers["latest"]
+	return latest, c.Compilers[latest]
+}
+
 func (c Config) Save(path string) error {
 	path = fmt.Sprint(filepath.Dir(os.Args[0]), "\\", path)
 

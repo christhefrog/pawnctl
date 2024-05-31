@@ -39,14 +39,40 @@ func Update(ctx *cli.Context) error {
 	return nil
 }
 
+func Compile(ctx *cli.Context) error {
+	filename := ctx.Args().First()
+	if filename == "" {
+		filename = "gamemode.pwn"
+	}
+
+	if _, err := os.Stat(filename); err != nil {
+		util.Fatalf("Couldnt find %s", filename)
+	}
+
+	err := compiler.Compile(filename)
+	if err != nil {
+		util.Fatalf("Couldn't compile %s (%s)", filename, err)
+	}
+
+	return nil
+}
+
 func main() {
 	app := &cli.App{
+		Name:  "sampman",
+		Usage: "A samp server manager",
 		Commands: []*cli.Command{
 			{
 				Name:    "update",
 				Aliases: []string{"u"},
 				Usage:   "Check for compiler updates",
 				Action:  Update,
+			},
+			{
+				Name:    "compile",
+				Aliases: []string{"c"},
+				Usage:   "Compile a specified pawn source (gamemode.pwn by default)",
+				Action:  Compile,
 			},
 		},
 	}
