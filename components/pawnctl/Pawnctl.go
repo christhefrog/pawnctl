@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/gookit/color"
 )
 
 type Config struct {
@@ -40,7 +42,7 @@ func LoadConfig() (*Config, error) {
 	config.Ready = true
 
 	if err != nil {
-		fmt.Println("Global config not found. Creating in", path)
+		color.Gray.Println("Global config not found. Creating in", path)
 		config.Save()
 	}
 

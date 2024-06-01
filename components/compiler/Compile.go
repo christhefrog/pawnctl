@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gookit/color"
 )
 
 func CompileFileWithDefaults(file string) {
@@ -74,7 +76,7 @@ func Compile() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	fmt.Printf("%s %s\n", compiler, strings.Join(args[:], " "))
+	color.Gray.Printf("%s %s\n", compiler, strings.Join(args[:], " "))
 
 	start := time.Now()
 
@@ -83,5 +85,5 @@ func Compile() {
 	file := filepath.Base(proj.Input)
 	os.Rename(fmt.Sprint(strings.TrimSuffix(file, filepath.Ext(file)), ".amx"), proj.Output)
 
-	fmt.Printf("...took %s", time.Since(start))
+	color.Gray.Printf("...took %s\n", time.Since(start))
 }

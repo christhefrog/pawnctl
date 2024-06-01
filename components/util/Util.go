@@ -3,6 +3,8 @@ package util
 import (
 	"fmt"
 	"os"
+
+	"github.com/gookit/color"
 )
 
 func Fatal(message ...any) {
@@ -11,6 +13,6 @@ func Fatal(message ...any) {
 }
 
 func Fatalf(format string, args ...any) {
-	fmt.Printf(fmt.Sprint(format, "\n"), args...)
+	color.Red.Printf(fmt.Sprint(format, "\n"), args...)
 	os.Exit(1)
 }
