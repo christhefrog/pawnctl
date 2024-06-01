@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"os"
 
-	"christhefrog/sampman/components/compiler"
-	"christhefrog/sampman/components/sampman"
-	"christhefrog/sampman/components/util"
+	"christhefrog/pawnctl/components/compiler"
+	"christhefrog/pawnctl/components/pawnctl"
+	"christhefrog/pawnctl/components/project"
+	"christhefrog/pawnctl/components/util"
 
 	"github.com/urfave/cli/v2"
 )
 
 func Update(ctx *cli.Context) error {
-	config, err := sampman.LoadConfig("sampman.json")
+	config, err := pawnctl.LoadConfig()
 	if err != nil {
-		util.Fatalf("Couldn't load sampman.json (%s)", err)
+		util.Fatalf("Couldn't load pawnctl.json (%s)", err)
 	}
 
 	fmt.Printf("Looking for compiler updates...\n")
@@ -24,11 +25,11 @@ func Update(ctx *cli.Context) error {
 		util.Fatalf("Couldn't fetch latest compiler (%s)\n", err)
 	}
 
-	if config.Compilers[release.Name] == "" {
+	if !config.IsCompilerInstalled(release.Name) {
 		fmt.Printf("\nA new compiler version is available: %s (%s)\nDownloading...\n\n",
 			release.Name, release.Published.Format("02.01.2006"))
 
-		err := compiler.Download(release, &config)
+		err := compiler.Download(release)
 		if err != nil {
 			util.Fatalf("Couldn't download compiler version %s (%s)", release.Name, err)
 		}
@@ -57,21 +58,75 @@ func Compile(ctx *cli.Context) error {
 	return nil
 }
 
+func Init(ctx *cli.Context) error {
+	config, err := pawnctl.LoadConfig()
+	if err != nil {
+		util.Fatalf("Couldn't load pawnctl.json (%s)", err)
+	}
+
+	proj, err := project.LoadConfig()
+	if err != nil {
+		util.Fatalf("Couldn't load project pawnctl.json (%s)", err)
+	}
+
+	if proj.CompilerVersion != "" {
+		util.Fatalf("Project is already initialized")
+	}
+
+	version := ""
+	fmt.Printf("\nCompiler version (leave blank for latest)\n%v\n> ", config.ListCompilers())
+	fmt.Scanln(&version)
+
+	if version == "" {
+		version = "latest"
+	}
+
+	source := ""
+	fmt.Print("\nSource file (leave blank for gamemodes\\gamemode.pwn)\n> ")
+	fmt.Scanln(&source)
+
+	if source == "" {
+		source = "gamemodes\\gamemode.pwn"
+	}
+
+	include := ""
+	fmt.Print("\nInclude path (leave blank for qawno\\include)\n> ")
+	fmt.Scanln(&include)
+
+	if include == "" {
+		include = "qawno\\include"
+	}
+
+	proj.CompilerVersion = version
+	proj.Sources = []string{source}
+	proj.Includes = []string{include}
+
+	proj.Save()
+
+	return nil
+}
+
 func main() {
 	app := &cli.App{
-		Name:  "sampman",
-		Usage: "A samp server manager",
+		Name:  "pawnctl",
+		Usage: "A pawn installation manager",
 		Commands: []*cli.Command{
 			{
 				Name:    "update",
 				Aliases: []string{"u"},
-				Usage:   "Check for compiler updates",
+				Usage:   "Update the compiler",
 				Action:  Update,
+			},
+			{
+				Name:    "init",
+				Aliases: []string{"i"},
+				Usage:   "Initialize a project",
+				Action:  Init,
 			},
 			{
 				Name:    "compile",
 				Aliases: []string{"c"},
-				Usage:   "Compile a specified pawn source (gamemode.pwn by default)",
+				Usage:   "Compile a project",
 				Action:  Compile,
 			},
 		},

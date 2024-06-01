@@ -1,7 +1,8 @@
 package compiler
 
 import (
-	"christhefrog/sampman/components/sampman"
+	"christhefrog/pawnctl/components/pawnctl"
+	"christhefrog/pawnctl/components/util"
 	"errors"
 	"fmt"
 	"os"
@@ -11,10 +12,9 @@ import (
 )
 
 func Compile(source string, args ...string) error {
-	config, err := sampman.LoadConfig("sampman.json")
-
+	config, err := pawnctl.LoadConfig()
 	if err != nil {
-		return err
+		util.Fatalf("Couldn't load pawnctl.json (%s)", err)
 	}
 
 	_, compiler := config.GetLatestCompiler()

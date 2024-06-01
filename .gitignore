@@ -20,10 +20,10 @@
 # Go workspace file
 go.work
 
-# sampman config files
+# pawnctl config files
 *.json
 
-# sampman paths
+# pawnctl paths
 compilers/
 
 # pawn source and binary files

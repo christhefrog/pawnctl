@@ -1,4 +1,4 @@
 #
 ![sampman](logo.png)
 #
-A samp server manager
+A pawn installation manager

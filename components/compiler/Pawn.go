@@ -1,9 +1,9 @@
 package compiler
 
 import (
-	"christhefrog/sampman/components/github"
-	"christhefrog/sampman/components/sampman"
-	"christhefrog/sampman/components/util"
+	"christhefrog/pawnctl/components/github"
+	"christhefrog/pawnctl/components/pawnctl"
+	"christhefrog/pawnctl/components/util"
 	"fmt"
 	"path/filepath"
 )
@@ -18,7 +18,12 @@ func FetchLatestRelease() (github.Release, error) {
 	return release, nil
 }
 
-func Download(release github.Release, config *sampman.Config) error {
+func Download(release github.Release) error {
+	config, err := pawnctl.LoadConfig()
+	if err != nil {
+		util.Fatalf("Couldn't load pawnctl.json (%s)", err)
+	}
+
 	name := fmt.Sprint("pawnc-", release.Name, "-windows")
 
 	asset, err := release.FindAsset(fmt.Sprint(name, ".zip"))
@@ -31,13 +36,13 @@ func Download(release github.Release, config *sampman.Config) error {
 		return err
 	}
 
-	util.Unzip(path, fmt.Sprint("compilers\\", release.Name))
+	util.Unzip(path, filepath.Dir(path))
 
 	exec := fmt.Sprint(filepath.Dir(path), "\\", name, "\\bin\\pawncc.exe")
-	config.SetCompiler(release.Name, exec)
-	config.SetCompiler("latest", release.Name)
+	config.AddCompiler(release.Name, exec)
+	config.AddCompiler("latest", release.Name)
 
-	config.Save("sampman.json")
+	config.Save()
 
 	return nil
 }
