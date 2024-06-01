@@ -21,7 +21,7 @@ func FetchLatestRelease() (github.Release, error) {
 func Download(release github.Release) error {
 	config, err := pawnctl.LoadConfig()
 	if err != nil {
-		util.Fatalf("Couldn't load pawnctl.json (%s)", err)
+		util.Fatalf("Couldn't load global config (%s)", err)
 	}
 
 	name := fmt.Sprint("pawnc-", release.Name, "-windows")

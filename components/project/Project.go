@@ -11,7 +11,8 @@ type Config struct {
 	Ready bool `json:"-"`
 
 	CompilerVersion string   `json:"compiler_version"`
-	Sources         []string `json:"sources"`
+	Input           string   `json:"input"`
+	Output          string   `json:"output"`
 	Includes        []string `json:"includes"`
 	Args            []string `json:"args"`
 }
@@ -36,9 +37,6 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	if config.Sources == nil {
-		config.Sources = make([]string, 0)
-	}
 	if config.Includes == nil {
 		config.Includes = make([]string, 0)
 	}
@@ -48,10 +46,9 @@ func LoadConfig() (*Config, error) {
 
 	config.Ready = true
 
-	if err != nil {
-		fmt.Println("Project config not found. Creating in", path)
-		config.Save()
-	}
+	// if err != nil {
+	// 	return nil, errors.New("project config not found, use `pawnctl i`")
+	// }
 
 	return &config, nil
 }

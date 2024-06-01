@@ -15,7 +15,7 @@ import (
 func Update(ctx *cli.Context) error {
 	config, err := pawnctl.LoadConfig()
 	if err != nil {
-		util.Fatalf("Couldn't load pawnctl.json (%s)", err)
+		util.Fatalf("Couldn't load global config (%s)", err)
 	}
 
 	fmt.Printf("Looking for compiler updates...\n")
@@ -42,17 +42,12 @@ func Update(ctx *cli.Context) error {
 
 func Compile(ctx *cli.Context) error {
 	filename := ctx.Args().First()
+
 	if filename == "" {
-		filename = "gamemode.pwn"
-	}
-
-	if _, err := os.Stat(filename); err != nil {
-		util.Fatalf("Couldnt find %s", filename)
-	}
-
-	err := compiler.Compile(filename)
-	if err != nil {
-		util.Fatalf("Couldn't compile %s (%s)", filename, err)
+		compiler.Compile()
+	} else {
+		//compiler.CompileFileWithDefaults(filename)
+		util.Fatal("Not implemented")
 	}
 
 	return nil
@@ -61,12 +56,16 @@ func Compile(ctx *cli.Context) error {
 func Init(ctx *cli.Context) error {
 	config, err := pawnctl.LoadConfig()
 	if err != nil {
-		util.Fatalf("Couldn't load pawnctl.json (%s)", err)
+		util.Fatalf("Couldn't load global config (%s)", err)
+	}
+
+	if len(config.ListCompilers()) < 1 {
+		util.Fatalf("No compilers found, use `pawnctl u`")
 	}
 
 	proj, err := project.LoadConfig()
 	if err != nil {
-		util.Fatalf("Couldn't load project pawnctl.json (%s)", err)
+		util.Fatalf("Couldn't load project config (%s)", err)
 	}
 
 	if proj.CompilerVersion != "" {
@@ -78,7 +77,7 @@ func Init(ctx *cli.Context) error {
 	fmt.Scanln(&version)
 
 	if version == "" {
-		version = "latest"
+		version = config.Compilers["latest"]
 	}
 
 	source := ""
@@ -87,6 +86,14 @@ func Init(ctx *cli.Context) error {
 
 	if source == "" {
 		source = "gamemodes\\gamemode.pwn"
+	}
+
+	output := ""
+	fmt.Print("\nOutput (leave blank for gamemodes\\gamemode.amx)\n> ")
+	fmt.Scanln(&output)
+
+	if output == "" {
+		output = "gamemodes\\gamemode.amx"
 	}
 
 	include := ""
@@ -98,7 +105,8 @@ func Init(ctx *cli.Context) error {
 	}
 
 	proj.CompilerVersion = version
-	proj.Sources = []string{source}
+	proj.Input = source
+	proj.Output = output
 	proj.Includes = []string{include}
 
 	proj.Save()
