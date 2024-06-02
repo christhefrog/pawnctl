@@ -41,6 +41,26 @@ func FetchLatestRelease(user string, repo string) (Release, error) {
 	return release, nil
 }
 
+func FetchRelease(user string, repo string, name string) (Release, error) {
+	url := fmt.Sprint("https://api.github.com/repos/", user, "/", repo, "/releases/tags/v", name)
+
+	body, err := Fetch(url)
+
+	if err != nil {
+		return Release{}, err
+	}
+
+	var release Release
+	err = json.Unmarshal(body, &release)
+	if err != nil {
+		return Release{}, err
+	} else if release.Name == "" {
+		return Release{}, fmt.Errorf("specified repository or release %s doesn't exist", name)
+	}
+
+	return release, nil
+}
+
 func (r Release) FindAsset(name string) (Asset, error) {
 	for _, v := range r.Assets {
 		if v.Name == name {

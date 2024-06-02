@@ -64,7 +64,7 @@ func Compile(profile string) {
 	}
 
 	if compiler == "" {
-		util.Fatalf("Couldn't find the compiler version %s, use `pawnctl u`", prof.CompilerVersion, prof.CompilerVersion)
+		util.Fatalf("Couldn't find compiler version %s, use `pawnctl u %s`", prof.CompilerVersion, prof.CompilerVersion)
 	}
 
 	args := make([]string, 0)

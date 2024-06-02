@@ -6,10 +6,22 @@ import (
 	"christhefrog/pawnctl/components/util"
 	"fmt"
 	"path/filepath"
+
+	"golang.org/x/mod/semver"
 )
 
 func FetchLatestRelease() (github.Release, error) {
 	release, err := github.FetchLatestRelease("pawn-lang", "compiler")
+
+	if err != nil {
+		return github.Release{}, err
+	}
+
+	return release, nil
+}
+
+func FetchRelease(name string) (github.Release, error) {
+	release, err := github.FetchRelease("pawn-lang", "compiler", name)
 
 	if err != nil {
 		return github.Release{}, err
@@ -40,7 +52,12 @@ func Download(release github.Release) error {
 
 	exec := fmt.Sprint(filepath.Dir(path), "\\", name, "\\bin\\pawncc.exe")
 	config.AddCompiler(release.Name, exec)
-	config.AddCompiler("latest", release.Name)
+
+	latest, _ := config.GetLatestCompiler()
+
+	if semver.Compare(fmt.Sprint("v", release.Name), fmt.Sprint("v", latest)) > 0 {
+		config.AddCompiler("latest", release.Name)
+	}
 
 	config.Save()
 

@@ -6,6 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gookit/color v1.5.4
 	github.com/urfave/cli/v2 v2.27.2
+	golang.org/x/mod v0.17.0
 )
 
 require (

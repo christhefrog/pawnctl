@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"christhefrog/pawnctl/components/compiler"
+	"christhefrog/pawnctl/components/github"
 	"christhefrog/pawnctl/components/pawnctl"
 	"christhefrog/pawnctl/components/project"
 	"christhefrog/pawnctl/components/util"
@@ -21,15 +22,27 @@ func Update(ctx *cli.Context) error {
 		util.Fatalf("Couldn't load global config (%s)", err)
 	}
 
-	color.Gray.Printf("Looking for compiler updates...\n")
+	var release github.Release
 
-	release, err := compiler.FetchLatestRelease()
-	if err != nil {
-		util.Fatalf("Couldn't fetch latest compiler (%s)\n", err)
+	name := ctx.Args().First()
+	if name == "" || name == "latest" {
+		color.Gray.Printf("Looking for lastest compiler...\n")
+
+		release, err = compiler.FetchLatestRelease()
+		if err != nil {
+			util.Fatalf("Couldn't fetch latest compiler (%s)\n", err)
+		}
+	} else {
+		color.Gray.Printf("Looking for compiler version %s...\n", name)
+
+		release, err = compiler.FetchRelease(name)
+		if err != nil {
+			util.Fatalf("Couldn't fetch compiler version %s (%s)\n", name, err)
+		}
 	}
 
 	if !config.IsCompilerInstalled(release.Name) {
-		color.Blue.Printf("\nA new compiler version is available: %s (%s)",
+		color.Blue.Printf("\nCompiler version %s is available (%s)",
 			release.Name, release.Published.Format("02.01.2006"))
 		fmt.Print("\nDownloading...\n\n")
 
