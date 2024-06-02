@@ -51,7 +51,8 @@ func (r Release) FindAsset(name string) (Asset, error) {
 }
 
 func (a Asset) Download(path ...string) (string, error) {
-	dest := filepath.Dir(os.Args[0])
+	ex, _ := os.Executable()
+	dest := filepath.Dir(ex)
 
 	for _, v := range path {
 		dest = fmt.Sprint(dest, "\\", v)

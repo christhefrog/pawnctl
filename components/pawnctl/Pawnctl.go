@@ -25,7 +25,9 @@ func LoadConfig() (*Config, error) {
 
 	path := "pawnctl.json"
 
-	path = fmt.Sprint(filepath.Dir(os.Args[0]), "\\", path)
+	ex, _ := os.Executable()
+
+	path = fmt.Sprint(filepath.Dir(ex), "\\", path)
 
 	file, err := os.ReadFile(path)
 	if err == nil {
@@ -76,8 +78,10 @@ func (c *Config) Save() error {
 		return errors.New("config handle isn't opened")
 	}
 
+	ex, _ := os.Executable()
+
 	path := "pawnctl.json"
-	path = fmt.Sprint(filepath.Dir(os.Args[0]), "\\", path)
+	path = fmt.Sprint(filepath.Dir(ex), "\\", path)
 
 	bytes, _ := json.MarshalIndent(c, "", "\t")
 
