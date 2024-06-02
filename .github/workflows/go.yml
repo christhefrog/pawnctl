@@ -27,7 +27,7 @@ jobs:
     - name: Post artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: "pawnctl.exe"
+        name: "pawnctl-win"
         path: "pawnctl.exe"
 
     # - name: Test
