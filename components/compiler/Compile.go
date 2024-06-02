@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,7 +37,7 @@ func CompileFileWithDefaults(file string) {
 	fmt.Printf("...took %s", time.Since(start))
 }
 
-func Compile() {
+func Compile(profile string) {
 	config, err := pawnctl.LoadConfig()
 	if err != nil {
 		util.Fatalf("Couldn't load global config (%s)", err)
@@ -49,28 +48,34 @@ func Compile() {
 		util.Fatalf("Couldn't load project config (%s)", err)
 	}
 
-	if proj.CompilerVersion == "" {
+	if len(proj.Profiles) < 1 {
 		util.Fatalf("Project config not found, use `pawnctl i`")
 	}
 
-	compiler := config.Compilers[proj.CompilerVersion]
-	if proj.CompilerVersion == "latest" {
+	prof, ok := proj.Profiles[profile]
+
+	if !ok {
+		util.Fatalf("Profile %s doesn't exist in current project", profile)
+	}
+
+	compiler := config.Compilers[prof.CompilerVersion]
+	if prof.CompilerVersion == "latest" {
 		compiler = config.Compilers[compiler]
 	}
 
 	if compiler == "" {
-		util.Fatalf("Couldn't find the compiler version %s, use `pawnctl u`", proj.CompilerVersion, proj.CompilerVersion)
+		util.Fatalf("Couldn't find the compiler version %s, use `pawnctl u`", prof.CompilerVersion, prof.CompilerVersion)
 	}
 
 	args := make([]string, 0)
-	args = append(args, proj.Input)
-	//args = append(args, fmt.Sprint("-D", proj.OutputDir))
+	args = append(args, prof.Input)
+	args = append(args, fmt.Sprint("-o", prof.Output))
 
-	for _, v := range proj.Includes {
+	for _, v := range prof.Includes {
 		args = append(args, fmt.Sprint("-i", v))
 	}
 
-	args = append(args, proj.Args...)
+	args = append(args, prof.Args...)
 
 	cmd := exec.Command(compiler, args...)
 	cmd.Stdout = os.Stdout
@@ -82,8 +87,8 @@ func Compile() {
 
 	_ = cmd.Run()
 
-	file := filepath.Base(proj.Input)
-	os.Rename(fmt.Sprint(strings.TrimSuffix(file, filepath.Ext(file)), ".amx"), proj.Output)
+	// file := filepath.Base(proj.Input)
+	// os.Rename(fmt.Sprint(strings.TrimSuffix(file, filepath.Ext(file)), ".amx"), proj.Output)
 
 	color.Gray.Printf("...took %s\n", time.Since(start))
 }

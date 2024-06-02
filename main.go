@@ -45,14 +45,9 @@ func Update(ctx *cli.Context) error {
 }
 
 func Compile(ctx *cli.Context) error {
-	filename := ctx.Args().First()
+	profile := ctx.Args().First()
 
-	if filename == "" {
-		compiler.Compile()
-	} else {
-		//compiler.CompileFileWithDefaults(filename)
-		util.Fatal("Not implemented")
-	}
+	compiler.Compile(profile)
 
 	return nil
 }
@@ -66,16 +61,23 @@ func Watch(ctx *cli.Context) error {
 		util.Fatalf("Couldn't load project config (%s)", err)
 	}
 
-	if proj.CompilerVersion == "" {
+	if len(proj.Profiles) < 1 {
 		util.Fatalf("Project config not found, use `pawnctl i`")
 	}
 
+	profile := ctx.Args().First()
+
+	prof, ok := proj.Profiles[profile]
+	if !ok {
+		util.Fatalf("Profile %s doesn't exist in current project", profile)
+	}
+
 	fmt.Print("\033[H\033[2J") // Clear screen
-	compiler.Compile()
+	compiler.Compile(profile)
 	color.Gray.Print("Watching for changes...\n")
 
-	watcher.Add(proj.Input)
-	for _, v := range proj.Includes {
+	watcher.Add(prof.Input)
+	for _, v := range prof.Includes {
 		watcher.Add(v)
 	}
 
@@ -102,8 +104,8 @@ func Watch(ctx *cli.Context) error {
 			case <-timer.C:
 				if lastEvent.Op&fsnotify.Write == fsnotify.Write {
 					fmt.Print("\033[H\033[2J") // Clear screen
-					compiler.Compile()
-					fmt.Print("Watching for changes...\n")
+					compiler.Compile(profile)
+					color.Gray.Print("Watching for changes...\n")
 				}
 				if err != nil {
 					util.Fatalf("Error watching for changes (%s)", err)
@@ -132,7 +134,7 @@ func Init(ctx *cli.Context) error {
 		util.Fatalf("Couldn't load project config (%s)", err)
 	}
 
-	if proj.CompilerVersion != "" {
+	if len(proj.Profiles) > 0 {
 		util.Fatalf("Project is already initialized")
 	}
 
@@ -158,7 +160,7 @@ func Init(ctx *cli.Context) error {
 
 	output := ""
 	fmt.Print("\nOutput ")
-	color.Gray.Print("(leave blank for gamemodes\\gamemode.pwn)\n")
+	color.Gray.Print("(leave blank for gamemodes\\gamemode.amx)\n")
 	fmt.Print("> ")
 	fmt.Scanln(&output)
 
@@ -176,12 +178,33 @@ func Init(ctx *cli.Context) error {
 		include = "qawno\\include"
 	}
 
-	proj.CompilerVersion = version
-	proj.Input = source
-	proj.Output = output
-	proj.Includes = []string{include}
+	proj.Profiles[""] = project.Profile{
+		CompilerVersion: version,
+		Input:           source,
+		Output:          output,
+		Includes:        []string{include},
+		Args:            []string{"-d3", "-Z-", "-;+", "-(+", "-\\", "-t4"},
+	}
+
+	proj.Profiles["release"] = project.Profile{
+		CompilerVersion: version,
+		Input:           source,
+		Output:          output,
+		Includes:        []string{include},
+		Args:            []string{"-d0", "-O2", "-Z-", "-;+", "-(+", "-\\", "-t4"},
+	}
 
 	proj.Save()
+
+	color.Green.Print("\nYou can now use:\n")
+	color.Gray.Print("pawnctl c ")
+	color.Blue.Print("\t\tto build a debug version\n")
+	color.Gray.Print("pawnctl c release ")
+	color.Blue.Print("\tto build a release version\n")
+	color.Gray.Print("pawnctl w (release) ")
+	color.Blue.Print("\tto build a debug/release version every time a file changes\n \n")
+
+	color.Gray.Print("If you want to create a new profile check out pawnctl.json")
 
 	return nil
 }

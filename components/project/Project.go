@@ -10,6 +10,10 @@ import (
 type Config struct {
 	Ready bool `json:"-"`
 
+	Profiles map[string]Profile `json:"profiles"`
+}
+
+type Profile struct {
 	CompilerVersion string   `json:"compiler_version"`
 	Input           string   `json:"input"`
 	Output          string   `json:"output"`
@@ -37,18 +41,16 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	if config.Includes == nil {
-		config.Includes = make([]string, 0)
-	}
-	if config.Args == nil {
-		config.Args = make([]string, 0)
+	if config.Profiles == nil {
+		config.Profiles = make(map[string]Profile)
+
+		// config.Profiles[""] = Profile{
+		// 	Includes: make([]string, 0),
+		// 	Args:     make([]string, 0),
+		// }
 	}
 
 	config.Ready = true
-
-	// if err != nil {
-	// 	return nil, errors.New("project config not found, use `pawnctl i`")
-	// }
 
 	return &config, nil
 }
