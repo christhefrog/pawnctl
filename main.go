@@ -91,7 +91,7 @@ func Watch(ctx *cli.Context) error {
 
 	watcher.Add(prof.Input)
 	for _, v := range prof.Includes {
-		watcher.Add(v)
+		watcher.Add(fmt.Sprint(v, "/..."))
 	}
 
 	go func() {
@@ -157,7 +157,7 @@ func Init(ctx *cli.Context) error {
 	fmt.Print("> ")
 	fmt.Scanln(&version)
 
-	if version == "" {
+	if version == "" || version == "latest" {
 		version = config.Compilers["latest"]
 	}
 
@@ -204,7 +204,7 @@ func Init(ctx *cli.Context) error {
 		Input:           source,
 		Output:          output,
 		Includes:        []string{include},
-		Args:            []string{"-d0", "-O2", "-Z-", "-;+", "-(+", "-\\", "-t4"},
+		Args:            []string{"-d0", "-O1", "-Z-", "-;+", "-(+", "-\\", "-t4"},
 	}
 
 	proj.Save()
