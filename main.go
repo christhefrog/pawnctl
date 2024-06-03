@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"time"
 
 	"christhefrog/pawnctl/components/compiler"
@@ -91,45 +93,58 @@ func Watch(ctx *cli.Context) error {
 
 	watcher.Add(prof.Input)
 	for _, v := range prof.Includes {
-		watcher.Add(fmt.Sprint(v, "/..."))
+		/*
+			Here's a really stupid workaround for fsnotify not supporting recursive watching.
+			Apparently it did suport it for windows, but since the maintainer didn't want to
+			write it for other backends, he removed it??
+
+			This solution also appears to trigger windows defender XD.
+
+			Also, with YSI installed, this function watches all it's directories which results
+			with hundreds entries added to the watcher. I don't know if it affects performance
+			much, but it definietly is worth consideration.
+		*/
+		filepath.WalkDir(v, func(path string, d fs.DirEntry, err error) error {
+			if err == nil && d.IsDir() {
+				watcher.Add(path)
+			}
+			return nil
+		})
 	}
 
-	go func() {
-		var (
-			timer     *time.Timer
-			lastEvent fsnotify.Event
-		)
-		timer = time.NewTimer(time.Millisecond)
-		<-timer.C // timer should be expired at first
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				lastEvent = event
-				timer.Reset(time.Millisecond * 200)
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				util.Fatalf("Error watching for changes (%s)", err)
-			case <-timer.C:
-				if lastEvent.Op&fsnotify.Write == fsnotify.Write {
-					fmt.Print("\033[H\033[2J") // Clear screen
-					compiler.Compile(profile)
-					color.Gray.Print("Watching for changes...\n")
-				}
-				if err != nil {
-					util.Fatalf("Error watching for changes (%s)", err)
-				}
+	var (
+		timer     *time.Timer
+		lastEvent fsnotify.Event
+	)
+	timer = time.NewTimer(time.Millisecond)
+	<-timer.C // timer should be expired at first
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			ext := filepath.Ext(event.Name)
+			if !ok || (ext != ".pwn" && ext != ".inc" && ext != ".p" && ext != ".pawn") {
+				continue
 			}
-
+			lastEvent = event
+			timer.Reset(time.Millisecond * 200)
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return nil
+			}
+			util.Fatalf("Error watching for changes (%s)", err)
+		case <-timer.C:
+			if lastEvent.Op&fsnotify.Write == fsnotify.Write {
+				fmt.Print("\033[H\033[2J") // Clear screen
+				fmt.Println(lastEvent.Name, "changed")
+				compiler.Compile(profile)
+				color.Gray.Print("Watching for changes...\n")
+			}
+			if err != nil {
+				util.Fatalf("Error watching for changes (%s)", err)
+			}
 		}
-	}()
 
-	<-make(chan struct{})
-	return nil
+	}
 }
 
 func Init(ctx *cli.Context) error {
@@ -249,7 +264,11 @@ func main() {
 				Name:    "watch",
 				Aliases: []string{"w"},
 				Usage:   "Watch for changes in a file and compile",
-				Action:  Watch,
+				// Action:  Watch,
+				Action: func(ctx *cli.Context) error {
+					util.Fatalf("Watching functionality isn't implemented properly for the moment.\nCurrent solution fires off windows defender for some reason.\nIt's disabled for now but it will come back in future.")
+					return nil
+				},
 			},
 		},
 	}
