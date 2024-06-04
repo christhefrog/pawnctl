@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -87,30 +86,24 @@ func Watch(ctx *cli.Context) error {
 		util.Fatalf("Profile %s doesn't exist in current project", profile)
 	}
 
+	parent := filepath.Dir(prof.Input)
+
 	fmt.Print("\033[H\033[2J") // Clear screen
+
+	// See christhefrog/pawnctl#1
+	color.Red.Printf("\nPlease note that for the time, watch only looks for changes in %s\\**.\n", parent)
+	color.Gray.Print("It means that other directories specified in profile.includes (ex. qawno\\include) aren't scanned.\n \n")
+
 	compiler.Compile(profile)
 	color.Gray.Print("Watching for changes...\n")
 
-	watcher.Add(prof.Input)
-	for _, v := range prof.Includes {
-		/*
-			Here's a really stupid workaround for fsnotify not supporting recursive watching.
-			Apparently it did suport it for windows, but since the maintainer didn't want to
-			write it for other backends, he removed it??
-
-			This solution also appears to trigger windows defender XD.
-
-			Also, with YSI installed, this function watches all it's directories which results
-			with hundreds entries added to the watcher. I don't know if it affects performance
-			much, but it definietly is worth consideration.
-		*/
-		filepath.WalkDir(v, func(path string, d fs.DirEntry, err error) error {
-			if err == nil && d.IsDir() {
-				watcher.Add(path)
-			}
+	filepath.Walk(parent, func(path string, info os.FileInfo, err error) error {
+		if err != nil || !info.IsDir() {
 			return nil
-		})
-	}
+		}
+		watcher.Add(path)
+		return nil
+	})
 
 	var (
 		timer     *time.Timer
@@ -122,10 +115,11 @@ func Watch(ctx *cli.Context) error {
 		select {
 		case event, ok := <-watcher.Events:
 			ext := filepath.Ext(event.Name)
-			if !ok || (ext != ".pwn" && ext != ".inc" && ext != ".p" && ext != ".pawn") {
+			if !ok || (ext != ".pwn" && ext != ".inc" && ext != ".p" && ext != ".pawn" && ext != "") {
 				continue
 			}
 			lastEvent = event
+			// Sometimes watch fires off twice, timer helps with that
 			timer.Reset(time.Millisecond * 200)
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -133,11 +127,16 @@ func Watch(ctx *cli.Context) error {
 			}
 			util.Fatalf("Error watching for changes (%s)", err)
 		case <-timer.C:
-			if lastEvent.Op&fsnotify.Write == fsnotify.Write {
+			ext := filepath.Ext(lastEvent.Name)
+			if lastEvent.Op.Has(fsnotify.Write) && ext != "" {
 				fmt.Print("\033[H\033[2J") // Clear screen
-				fmt.Println(lastEvent.Name, "changed")
+				color.Green.Println(lastEvent.Name, "changed")
 				compiler.Compile(profile)
 				color.Gray.Print("Watching for changes...\n")
+			}
+			// Is directory?
+			if lastEvent.Op.Has(fsnotify.Create) && ext == "" {
+				watcher.Add(lastEvent.Name)
 			}
 			if err != nil {
 				util.Fatalf("Error watching for changes (%s)", err)
@@ -265,10 +264,7 @@ func main() {
 				Aliases: []string{"w"},
 				Usage:   "Watch for changes in a file and compile",
 				// Action:  Watch,
-				Action: func(ctx *cli.Context) error {
-					util.Fatalf("Watching functionality isn't implemented properly for the moment.\nCurrent solution fires off windows defender for some reason.\nIt's disabled for now but it will come back in future.")
-					return nil
-				},
+				Action: Watch,
 			},
 		},
 	}
